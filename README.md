@@ -1,0 +1,209 @@
+# DualDraw — EMRペン＋タッチ同時描画アプリ (Wacom MovinkPad / Android 15)
+
+EMRペン（Wacom）と指/タッチペンを**同時に**別チャンネルで描画できる Android アプリです。  
+ペンは青系、タッチは赤系で描かれ、筆圧によってストローク幅が変化します。
+
+---
+
+## なぜこのアプローチが必要か
+
+Android の InputDispatcher には **"stylus suppresses touch"** という仕様があります。  
+EMRペンが hover 状態になると、タッチ入力に `ACTION_CANCEL` が送られ、同時描画ができません。
+
+この問題を回避するため、Android の入力システムを**完全にバイパス**し、  
+Linux カーネルのデバイスファイル `/dev/input/event*` を直接読み取っています。
+
+### アーキテクチャ
+
+```
+/dev/input/event3  (タッチ)  ──┐
+/dev/input/event6  (EMRペン) ──┤  adb exec-out  ──→  PC relay.py  ──→  adb reverse  ──→  RawInputBridge (アプリ)
+                                └──────────────────────────────────────────────────────────────────────────────
+```
+
+- `adb exec-out` でデバイスのカーネルイベントを PC に転送
+- PC 側の `relay.py` が TCP サーバーとして待機
+- `adb reverse` でデバイス上の localhost ポートを PC にトンネル
+- アプリの `RawInputBridge` が接続し、イベントを受信して描画
+
+> **なぜ PC 経由？**  
+> SELinux (Enforcing) がアプリ (`untrusted_app` ドメイン) から  
+> shell の TCP ソケットへの直接接続をブロックするため、  
+> `adbd` 経由のトンネルで回避しています。
+
+---
+
+## 動作環境
+
+| 項目 | 内容 |
+|------|------|
+| デバイス | Wacom MovinkPad (Android 15) |
+| PC | Windows 10/11 |
+| Android Studio | Hedgehog 以降 |
+| AGP | 8.3.0 |
+| Kotlin | 1.9.23 |
+| Gradle | 9.0.0 |
+| Python | 3.x（`py` コマンドで起動できること） |
+
+---
+
+## ファイル構成
+
+```
+DualDraw_project/
+├── relay.py                        ← PC 側中継スクリプト（毎回起動が必要）
+└── DualDraw/
+    ├── app/src/main/java/com/example/dualdraw/
+    │   ├── MainActivity.kt         ← Activity・イベント横取り・Bridge 管理
+    │   ├── DualDrawView.kt         ← 描画ビュー（ペン/タッチ独立レイヤー）
+    │   └── RawInputBridge.kt       ← TCP でイベントを受信・座標変換
+    ├── app/src/main/res/
+    │   └── layout/activity_main.xml
+    └── app/src/main/AndroidManifest.xml
+```
+
+---
+
+## セットアップ手順
+
+### 1. リポジトリをクローン（または ZIP 展開）
+
+```powershell
+git clone https://github.com/YOUR_USERNAME/DualDraw.git
+cd DualDraw
+```
+
+### 2. Android Studio でビルド
+
+```powershell
+cd DualDraw_project\DualDraw
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+.\gradlew installDebug
+```
+
+> `JAVA_HOME` は Android Studio の JBR を指定してください。
+
+### 3. Python インストール（未インストールの場合）
+
+[https://www.python.org/downloads/](https://www.python.org/downloads/) から Python 3.x をインストール。  
+`py --version` で確認。
+
+---
+
+## 使い方（毎回の起動手順）
+
+### 手順 1：デバイスを USB 接続し、adb を確認
+
+```powershell
+$adb = "$env:USERPROFILE\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+& $adb devices
+```
+
+### 手順 2：relay.py を起動
+
+```powershell
+py C:\Users\nakamura\DualDraw_project\relay.py
+```
+
+以下のように表示されれば OK：
+
+```
+adb reverse tcp:9003 -> tcp:9003  OK
+adb reverse tcp:9006 -> tcp:9006  OK
+[9003] waiting (/dev/input/event3)
+[9006] waiting (/dev/input/event6)
+relay started. Ctrl+C to stop.
+```
+
+### 手順 3：アプリを起動
+
+デバイス上のアイコンをタップ、または：
+
+```powershell
+& "$env:USERPROFILE\AppData\Local\Android\Sdk\platform-tools\adb.exe" shell am start -n com.example.dualdraw/.MainActivity
+```
+
+アプリ画面に `RAW touch=✓ stylus=✓` と表示されれば接続成功です。
+
+### 手順 4：描画
+
+- **EMRペン（Wacom）**：青系で描画
+- **指 / タッチペン**：赤系で描画
+- 両方同時に使用可能
+
+> relay.py を止める場合は `Ctrl+C`
+
+---
+
+## コード解説
+
+### RawInputBridge.kt — カーネルイベント受信
+
+TCP ソケット経由で Linux の `input_event` 構造体 (24 バイト) を受信します。
+
+```
+struct input_event {          // 64bit Linux
+    __s64  tv_sec;            //  8 bytes
+    __s64  tv_usec;           //  8 bytes
+    __u16  type;              //  2 bytes
+    __u16  code;              //  2 bytes
+    __s32  value;             //  4 bytes
+};                            // 計 24 bytes
+```
+
+**タッチ（event3）**: Multi-Touch Protocol B  
+スロット番号 (`ABS_MT_SLOT`) と tracking ID (`ABS_MT_TRACKING_ID`) で指を識別します。
+
+**EMRペン（event6）**: シングルタッチプロトコル  
+`BTN_TOUCH` で pen down/up を検出、`ABS_X/Y/PRESSURE` で座標と筆圧を取得します。
+
+**座標変換**（portrait → landscape）：
+
+```kotlin
+// USE_ROTATION_90 = false の場合
+vx = rawY / Y_MAX * viewWidth
+vy = (1f - rawX / X_MAX) * viewHeight
+```
+
+### DualDrawView.kt — 独立レイヤー描画
+
+`DevicePointerKey(deviceId, pointerId)` をキーにストロークを管理。  
+ペンレイヤーとタッチレイヤーを別々の `Canvas` / `Bitmap` に描画し、`onDraw` で重ねます。
+
+筆圧に応じてストローク幅を線形補間：
+
+```kotlin
+strokeWidth = lerp(minWidth, maxWidth, pressure)
+```
+
+### relay.py — PC 側中継
+
+```python
+# adb reverse でデバイスの localhost:PORT を PC の PORT にトンネル
+adb reverse tcp:9003 tcp:9003
+adb reverse tcp:9006 tcp:9006
+
+# adb exec-out でカーネルデバイスファイルをストリーム
+proc = Popen([adb, "exec-out", "cat /dev/input/event3"], stdout=PIPE)
+
+# PC の TCP サーバーに接続してきたアプリにデータを転送
+conn.sendall(proc.stdout.read(24))
+```
+
+---
+
+## トラブルシューティング
+
+| 症状 | 対処 |
+|------|------|
+| `RAW touch=… stylus=…` のまま | relay.py が起動しているか確認 |
+| relay.py で `adb reverse FAILED` | USB 接続・adb デバイス認識を確認 |
+| 描画位置がずれる | `RawInputBridge.kt` の `USE_ROTATION_90` を変更してリビルド |
+| 二重に描かれる | relay.py 起動前にアプリを再起動 |
+| 遅延が大きい | USB 3.0 ポートに変更、または PC の性能を確認 |
+
+---
+
+## ライセンス
+
+MIT

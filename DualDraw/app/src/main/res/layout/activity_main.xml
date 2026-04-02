@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F8F8">
+
+    <!-- 描画エリア（左側の大部分） -->
+    <com.example.dualdraw.DualDrawView
+        android:id="@+id/drawingView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#FFFFFF"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/panel" />
+
+    <!-- 右側コントロールパネル -->
+    <LinearLayout
+        android:id="@+id/panel"
+        android:layout_width="220dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:background="#EFEFEF"
+        android:padding="12dp"
+        android:gravity="top"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <!-- タイトル -->
+        <TextView
+            android:text="DualDraw"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginBottom="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- 統計 -->
+        <TextView
+            android:id="@+id/tvPenStats"
+            android:text="ペン: 0 pt"
+            android:textColor="#1A6EBB"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tvTouchStats"
+            android:text="タッチ: 0 pt"
+            android:textColor="#C0392B"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- 区切り -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#CCCCCC" android:layout_marginBottom="10dp"/>
+
+        <!-- ペン設定 -->
+        <TextView android:text="● EMRペン（青系）"
+            android:textColor="#1A6EBB" android:textSize="13sp" android:textStyle="bold"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <TextView android:text="色" android:textSize="12sp" android:textColor="#555555"
+            android:layout_marginTop="6dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <Spinner android:id="@+id/spinnerPenColor"
+            android:layout_width="match_parent" android:layout_height="40dp"/>
+
+        <TextView android:text="太さ" android:textSize="12sp" android:textColor="#555555"
+            android:layout_marginTop="6dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <SeekBar android:id="@+id/seekPenWidth"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"/>
+
+        <Button android:id="@+id/btnClearPen"
+            android:text="ペンレイヤーをクリア"
+            android:textSize="11sp"
+            android:layout_width="match_parent" android:layout_height="36dp"
+            android:backgroundTint="#1A6EBB"/>
+
+        <!-- 区切り -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#CCCCCC" android:layout_marginTop="12dp"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- タッチ設定 -->
+        <TextView android:text="● タッチ/USIペン（赤系）"
+            android:textColor="#C0392B" android:textSize="13sp" android:textStyle="bold"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <TextView android:text="色" android:textSize="12sp" android:textColor="#555555"
+            android:layout_marginTop="6dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <Spinner android:id="@+id/spinnerTouchColor"
+            android:layout_width="match_parent" android:layout_height="40dp"/>
+
+        <TextView android:text="太さ" android:textSize="12sp" android:textColor="#555555"
+            android:layout_marginTop="6dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <SeekBar android:id="@+id/seekTouchWidth"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"/>
+
+        <Button android:id="@+id/btnClearTouch"
+            android:text="タッチレイヤーをクリア"
+            android:textSize="11sp"
+            android:layout_width="match_parent" android:layout_height="36dp"
+            android:backgroundTint="#C0392B"/>
+
+        <!-- 区切り -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#CCCCCC" android:layout_marginTop="12dp"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- 全クリア -->
+        <Button android:id="@+id/btnClear"
+            android:text="全クリア"
+            android:textSize="13sp"
+            android:layout_width="match_parent" android:layout_height="44dp"
+            android:backgroundTint="#444444"/>
+
+        <!-- 情報表示 -->
+        <TextView
+            android:id="@+id/tvInfo"
+            android:text=""
+            android:textSize="11sp"
+            android:textColor="#888888"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

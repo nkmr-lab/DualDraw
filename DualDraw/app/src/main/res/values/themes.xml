@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DualDraw" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#1A6EBB</item>
+        <item name="colorPrimaryVariant">#0D3B6E</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#C0392B</item>
+        <item name="android:windowBackground">#F8F8F8</item>
+    </style>
+</resources>
