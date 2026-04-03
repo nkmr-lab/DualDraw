@@ -82,7 +82,7 @@ DualDraw_project/
 ### 1. リポジトリをクローン（または ZIP 展開）
 
 ```powershell
-git clone https://github.com/YOUR_USERNAME/DualDraw.git
+git clone https://github.com/nkmr-lab/DualDraw.git
 cd DualDraw
 ```
 
@@ -99,7 +99,7 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 ### 3. Python インストール（未インストールの場合）
 
 [https://www.python.org/downloads/](https://www.python.org/downloads/) から Python 3.x をインストール。  
-`py --version` で確認。
+`python --version` で確認。
 
 ---
 
@@ -115,7 +115,7 @@ $adb = "$env:USERPROFILE\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 ### 手順 2：relay.py を起動
 
 ```powershell
-py C:\Users\nakamura\DualDraw_project\relay.py
+python C:\Users\nakamura\DualDraw_project\relay.py
 ```
 
 以下のように表示されれば OK：
