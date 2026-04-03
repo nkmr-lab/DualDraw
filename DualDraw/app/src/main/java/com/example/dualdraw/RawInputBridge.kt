@@ -230,22 +230,32 @@ class RawInputBridge(private val view: DualDrawView) {
 
     // ---- 座標変換 ----
 
+    /** スクリーン全体のサイズと View のオフセットを取得 */
+    private fun screenInfo(): FloatArray? {
+        val loc = IntArray(2)
+        view.getLocationOnScreen(loc)
+        val root = view.rootView
+        val sw = root.width.toFloat().takeIf { it > 0f } ?: return null
+        val sh = root.height.toFloat().takeIf { it > 0f } ?: return null
+        return floatArrayOf(sw, sh, loc[0].toFloat(), loc[1].toFloat())
+    }
+
     private fun mapTouch(rawX: Float, rawY: Float): Pair<Float, Float> {
-        val w = view.width.toFloat().takeIf  { it > 0f } ?: return 0f to 0f
-        val h = view.height.toFloat().takeIf { it > 0f } ?: return 0f to 0f
+        val s = screenInfo() ?: return 0f to 0f
+        val sw = s[0]; val sh = s[1]; val offX = s[2]; val offY = s[3]
         return if (USE_ROTATION_90)
-            (1f - rawY / TOUCH_Y_MAX) * w to rawX / TOUCH_X_MAX * h
+            (1f - rawY / TOUCH_Y_MAX) * sw - offX to rawX / TOUCH_X_MAX * sh - offY
         else
-            rawY / TOUCH_Y_MAX * w to (1f - rawX / TOUCH_X_MAX) * h
+            rawY / TOUCH_Y_MAX * sw - offX to (1f - rawX / TOUCH_X_MAX) * sh - offY
     }
 
     private fun mapStylus(rawX: Float, rawY: Float): Pair<Float, Float> {
-        val w = view.width.toFloat().takeIf  { it > 0f } ?: return 0f to 0f
-        val h = view.height.toFloat().takeIf { it > 0f } ?: return 0f to 0f
+        val s = screenInfo() ?: return 0f to 0f
+        val sw = s[0]; val sh = s[1]; val offX = s[2]; val offY = s[3]
         return if (USE_ROTATION_90)
-            (1f - rawY / STYLUS_Y_MAX) * w to rawX / STYLUS_X_MAX * h
+            (1f - rawY / STYLUS_Y_MAX) * sw - offX to rawX / STYLUS_X_MAX * sh - offY
         else
-            rawY / STYLUS_Y_MAX * w to (1f - rawX / STYLUS_X_MAX) * h
+            rawY / STYLUS_Y_MAX * sw - offX to (1f - rawX / STYLUS_X_MAX) * sh - offY
     }
 
     private fun readFully(inp: InputStream, buf: ByteArray): Boolean {
