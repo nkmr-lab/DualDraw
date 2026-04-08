@@ -148,6 +148,59 @@ relay started. Ctrl+C to stop.
 
 ---
 
+## PC なしで使う（Termux モード）
+
+Termux を使えば MovinkPad 単体で動作できます。ワイヤレスデバッグで自分自身に adb 接続し、デバイス上で relay を実行します。localhost 通信なのでレイテンシもほぼゼロです。
+
+### 初回セットアップ
+
+1. **Termux を [F-Droid](https://f-droid.org/packages/com.termux/) からインストール**（Play Store 版は古いので非推奨）
+
+2. Termux でパッケージをインストール：
+   ```bash
+   pkg update && pkg install android-tools python
+   ```
+
+3. 設定 → 開発者向けオプション → **ワイヤレスデバッグ** を ON
+
+4. 開発者向けオプション → **子プロセスの制限を無効化** を ON（Android 14+）
+
+5. **画面分割**で Termux とワイヤレスデバッグ設定画面を並べて表示
+
+6. ワイヤレスデバッグ設定から「ペアリングコードによるデバイスのペアリング」をタップし、Termux で：
+   ```bash
+   adb pair 127.0.0.1:<ペアリングポート>
+   # 表示された6桁コードを入力
+   ```
+
+7. `relay_termux.py` をデバイスに転送：
+   ```powershell
+   # PC から転送
+   & $adb push C:\Users\nakamura\DualDraw_project\relay_termux.py /sdcard/relay_termux.py
+   ```
+   Termux 側でコピー：
+   ```bash
+   cp /sdcard/relay_termux.py ~/relay_termux.py
+   ```
+
+### 毎回の起動手順（Termux）
+
+1. ワイヤレスデバッグ設定画面で **接続ポート** を確認（再起動のたびに変わる）
+
+2. Termux で接続：
+   ```bash
+   adb connect 127.0.0.1:<接続ポート>
+   ```
+
+3. relay を起動：
+   ```bash
+   python ~/relay_termux.py
+   ```
+
+4. DualDraw アプリを起動 → `RAW touch=✓ stylus=✓` と表示されれば成功
+
+---
+
 ## コード解説
 
 ### RawInputBridge.kt — カーネルイベント受信
